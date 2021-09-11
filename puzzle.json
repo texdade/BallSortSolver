@@ -1,7 +1,7 @@
 {
     "puzzle":[
-        ["red", "red", "green", "green"],
-        ["green", "green", "red", "red"],
+        ["orange", "orange", "red", "blue"],
+        ["red", "blue", "orange", "red"],
         [],
         []
     ]
