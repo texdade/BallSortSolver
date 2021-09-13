@@ -25,7 +25,6 @@ def checkMoves(ballData, current):
                 moves.append((current, i))
         #if there is a ball of the same color and the vial isn't full
         elif color == vial[-1] and len(vial) < 4:
-            #check if the move isn't blocked
             moves.insert(0, (current, i))
         
         i+=1
@@ -48,11 +47,14 @@ def checkWinCon(ballData):
     
     return True
 
-def solve(ballData, current):
-    print(ballData)
+def solve(ballData, current, lastCheck=False):
 
     if(current == len(ballData)):
-        current = 0
+        if(lastCheck):
+            return False
+        else:
+            current = 0
+            lastCheck=True
 
     if(checkWinCon(ballData)):
         print(ballData)
@@ -63,31 +65,39 @@ def solve(ballData, current):
 
     #if we don't have moves, check next vial
     if(moves == []):
-        return solve(ballData, current+1)
+        return solve(ballData, current+1, lastCheck)
 
     for move in moves:
+        print("Current: "+str(current)+ " Possible moves: "+str(len(moves)))
         ballDataTemp = copy.deepcopy(ballData)
+        print(ballDataTemp)
+        print(makeHash(ballDataTemp))
         ball = ballDataTemp[move[0]].pop()
         ballDataTemp[move[1]].append(ball)
 
         if(makeHash(ballDataTemp) not in blockedSituations):
             blockedSituations.add(makeHash(ballDataTemp))
-            if(solve(ballDataTemp, current)):
+            if(solve(ballDataTemp, current, lastCheck)):
                 return True
+        else:
+            print("BlockedMove!")
+    
+    return solve(ballData, current+1, lastCheck)
+    
 
 def makeHash(ballData):
-    hashedValue = str()
+    hashedValue = "|"
 
     for vial in ballData:
         if(len(vial) > 0):
             for ball in vial:
                 hashedValue += str(ball)
+            hashedValue += "|"
         else:
             hashedValue += str(0)
+            hashedValue += "|"
 
-    print(hashedValue)
-
-    return int(hashedValue)
+    return hashedValue
 
 if __name__ == "__main__":
     if(len(sys.argv) != 2):
