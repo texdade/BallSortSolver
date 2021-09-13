@@ -1,14 +1,8 @@
 import json, sys, copy
 
-#define pass_by_value decorator
-def pass_by_value(f):
-    def _f(*args, **kwargs):
-        args_copied = copy.deepcopy(args)
-        kwargs_copied = copy.deepcopy(kwargs)
-        return f(*args_copied, **kwargs_copied)
-    return _f
+blockedSituations = set()
 
-def checkMoves(ballData, blockedMoves, current):
+def checkMoves(ballData, current):
     #return empty list if the vial is empty
     if(len(ballData[current]) == 0):
         return []
@@ -26,15 +20,13 @@ def checkMoves(ballData, blockedMoves, current):
             continue
 
         if len(vial) == 0:
-            if not (current, i) in blockedMoves:
-                #put the empty vial move at the back, so more meaningful moves can be done before
-                if(not sameColor(ballData[current])):
-                    moves.append((current, i))
+            #put the empty vial move at the back, so more meaningful moves can be done before
+            if(not sameColor(ballData[current])):
+                moves.append((current, i))
         #if there is a ball of the same color and the vial isn't full
         elif color == vial[-1] and len(vial) < 4:
             #check if the move isn't blocked
-            if not (current, i) in blockedMoves:
-                moves.insert(0, (current, i))
+            moves.insert(0, (current, i))
         
         i+=1
 
@@ -56,38 +48,46 @@ def checkWinCon(ballData):
     
     return True
 
-@pass_by_value
-def solve(ballData, blockedMoves, current, fromVial, toVial):
+def solve(ballData, current):
     print(ballData)
 
     if(current == len(ballData)):
         current = 0
 
-    if(fromVial != -1 and toVial != -1):
-        ball = ballData[fromVial].pop()
-        ballData[toVial].append(ball)
-        blockedMoves.add((toVial, fromVial))
-
-        #remove blocked moves in that vial
-        blockedMoves = list(blockedMoves)
-        for blockedMove in blockedMoves:
-            if(blockedMove[0] == fromVial):
-                blockedMoves.remove((blockedMove[0], blockedMove[1]))
-        blockedMoves = set(blockedMoves)
-       
     if(checkWinCon(ballData)):
         print(ballData)
         return True
 
     #check possible moves
-    moves = checkMoves(ballData, blockedMoves, current)
+    moves = checkMoves(ballData, current)
 
     #if we don't have moves, check next vial
     if(moves == []):
-        return solve(ballData, blockedMoves, current+1, -1, -1)
+        return solve(ballData, current+1)
 
     for move in moves:
-        return solve(ballData, blockedMoves, current, move[0], move[1])
+        ballDataTemp = copy.deepcopy(ballData)
+        ball = ballDataTemp[move[0]].pop()
+        ballDataTemp[move[1]].append(ball)
+
+        if(makeHash(ballDataTemp) not in blockedSituations):
+            blockedSituations.add(makeHash(ballDataTemp))
+            if(solve(ballDataTemp, current)):
+                return True
+
+def makeHash(ballData):
+    hashedValue = str()
+
+    for vial in ballData:
+        if(len(vial) > 0):
+            for ball in vial:
+                hashedValue += str(ball)
+        else:
+            hashedValue += str(0)
+
+    print(hashedValue)
+
+    return int(hashedValue)
 
 if __name__ == "__main__":
     if(len(sys.argv) != 2):
@@ -105,7 +105,7 @@ if __name__ == "__main__":
         ballData.append(row)
 
     #start from scratch
-    solved = solve(ballData, set(), 0, -1, -1)
+    solved = solve(ballData, 0)
 
     if(solved):
         print("Solved!")
