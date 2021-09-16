@@ -5,9 +5,9 @@ blockedSituations = set()
 def checkMoves(ballData, current):
     #return empty list if the vial is empty
     if(len(ballData[current]) == 0):
-        return []
+        return list()
 
-    #get the color of the ball when want to move
+    #get the color of the ball we want to move
     color = ballData[current][-1]
     moves = list()
 
@@ -20,8 +20,9 @@ def checkMoves(ballData, current):
             continue
 
         if len(vial) == 0:
-            #put the empty vial move at the back, so more meaningful moves can be done before
-            if(not sameColor(ballData[current])):
+            #we don't want to move a ball from a vial we have already completed
+            if(not (sameColor(ballData[current]) and len(ballData[current]) == 4)):
+                #put the empty vial move at the back, so more meaningful moves can be done before
                 moves.append((current, i))
         #if there is a ball of the same color and the vial isn't full
         elif color == vial[-1] and len(vial) < 4:
@@ -31,9 +32,12 @@ def checkMoves(ballData, current):
 
     return moves
 
+#functions that checks if a vial contains only balls of the same color
 def sameColor(vial):
     if(len(set(vial)) == 1):
         return True
+    else:
+        return False
 
 def checkWinCon(ballData):
     for vial in ballData:
@@ -51,6 +55,7 @@ def solve(ballData, current, lastCheck=False):
 
     if(current == len(ballData)):
         if(lastCheck):
+            print("######### Returning back! #########")
             return False
         else:
             current = 0
@@ -69,11 +74,13 @@ def solve(ballData, current, lastCheck=False):
 
     for move in moves:
         print("Current: "+str(current)+ " Possible moves: "+str(len(moves)))
+        print("Trying move: " + str(move))
         ballDataTemp = copy.deepcopy(ballData)
-        print(ballDataTemp)
-        print(makeHash(ballDataTemp))
         ball = ballDataTemp[move[0]].pop()
         ballDataTemp[move[1]].append(ball)
+        
+        print(ballDataTemp)
+        print(makeHash(ballDataTemp))
 
         if(makeHash(ballDataTemp) not in blockedSituations):
             blockedSituations.add(makeHash(ballDataTemp))
@@ -81,7 +88,7 @@ def solve(ballData, current, lastCheck=False):
                 return True
         else:
             print("BlockedMove!")
-    
+
     return solve(ballData, current+1, lastCheck)
     
 
