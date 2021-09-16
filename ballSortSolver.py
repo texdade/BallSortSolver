@@ -1,4 +1,4 @@
-import json, sys, copy
+import json, sys, copy, time
 
 blockedSituations = set()
 
@@ -55,14 +55,12 @@ def solve(ballData, current, lastCheck=False):
 
     if(current == len(ballData)):
         if(lastCheck):
-            print("######### Returning back! #########")
             return False
         else:
             current = 0
             lastCheck=True
 
     if(checkWinCon(ballData)):
-        print(ballData)
         return True
 
     #check possible moves
@@ -73,21 +71,14 @@ def solve(ballData, current, lastCheck=False):
         return solve(ballData, current+1, lastCheck)
 
     for move in moves:
-        print("Current: "+str(current)+ " Possible moves: "+str(len(moves)))
-        print("Trying move: " + str(move))
         ballDataTemp = copy.deepcopy(ballData)
         ball = ballDataTemp[move[0]].pop()
         ballDataTemp[move[1]].append(ball)
-        
-        print(ballDataTemp)
-        print(makeHash(ballDataTemp))
 
         if(makeHash(ballDataTemp) not in blockedSituations):
             blockedSituations.add(makeHash(ballDataTemp))
-            if(solve(ballDataTemp, current, lastCheck)):
+            if(solve(ballDataTemp, current, False)):
                 return True
-        else:
-            print("BlockedMove!")
 
     return solve(ballData, current+1, lastCheck)
     
@@ -122,9 +113,12 @@ if __name__ == "__main__":
         ballData.append(row)
 
     #start from scratch
+    startTime = time.time()
     solved = solve(ballData, 0)
+    endTime = time.time()
 
     if(solved):
         print("Solved!")
+        print("Executed in " + str(endTime - startTime) + " seconds")
     else:
         print("Unsolvable!")
