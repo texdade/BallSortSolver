@@ -2,6 +2,7 @@ import json, sys, copy, time
 
 blockedSituations = set()
 
+#function that returns all legal moves, given the grid and the current vial
 def checkMoves(ballData, current):
     #return empty list if the vial is empty
     if(len(ballData[current]) == 0):
@@ -32,13 +33,14 @@ def checkMoves(ballData, current):
 
     return moves
 
-#functions that checks if a vial contains only balls of the same color
+#function that checks if a vial contains only balls of the same color
 def sameColor(vial):
     if(len(set(vial)) == 1):
         return True
     else:
         return False
 
+#function that checks if the win condition has been met 
 def checkWinCon(ballData):
     for vial in ballData:
         #vials must be either empty or have only balls of the same color
@@ -52,16 +54,15 @@ def checkWinCon(ballData):
     return True
 
 def solve(ballData, current, lastCheck=False):
-
     if(current == len(ballData)):
         if(lastCheck):
-            return False
+            return False, []
         else:
             current = 0
             lastCheck=True
 
     if(checkWinCon(ballData)):
-        return True
+        return True, []
 
     #check possible moves
     moves = checkMoves(ballData, current)
@@ -77,12 +78,15 @@ def solve(ballData, current, lastCheck=False):
 
         if(makeHash(ballDataTemp) not in blockedSituations):
             blockedSituations.add(makeHash(ballDataTemp))
-            if(solve(ballDataTemp, current, False)):
-                return True
+            
+            solved, movesToBeat = solve(ballDataTemp, current, False)
+            if(solved):
+                movesToBeat.insert(0, move)
+                return True, movesToBeat
 
     return solve(ballData, current+1, lastCheck)
     
-
+#function that makes hash out of the puzzle grid
 def makeHash(ballData):
     hashedValue = "|"
 
@@ -97,6 +101,26 @@ def makeHash(ballData):
 
     return hashedValue
 
+def checkInput(input):
+    stdVialLen = len(input[0])
+    ballCount = dict()
+
+    for vial in input:
+        if(len(vial) != stdVialLen and len(vial) != 0):
+            return False
+        
+        for ball in vial:
+            if(ball not in ballCount):
+                ballCount[ball] = 0
+
+            ballCount[ball]+=1
+
+    for colour in ballCount:
+        if(ballCount[colour] != stdVialLen):
+            return False
+
+    return True
+
 if __name__ == "__main__":
     if(len(sys.argv) != 2):
         print("ERROR: must specify input JSON file!")
@@ -106,6 +130,9 @@ if __name__ == "__main__":
         jsonFile = open(sys.argv[1],)
 
     ballDataJson = json.load(jsonFile)
+    if(not (checkInput(ballDataJson["puzzle"]))):
+        print("Malformed input file!")
+        exit()
 
     ballData = []
     #convert json to list of lists (which will be treated as stacks)
@@ -114,11 +141,14 @@ if __name__ == "__main__":
 
     #start from scratch
     startTime = time.time()
-    solved = solve(ballData, 0)
+    solved, movesToBeat = solve(ballData, 0)
     endTime = time.time()
 
     if(solved):
         print("Solved!")
         print("Executed in " + str(endTime - startTime) + " seconds")
+        print("Solved in " + str(len(movesToBeat)) + " moves")
+        for move in movesToBeat:
+            print(move)
     else:
         print("Unsolvable!")
